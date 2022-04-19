@@ -14,6 +14,9 @@ const telegram = new Telegram(process.env.token)
 const bot = new Telegraf(process.env.token)
 const {api} = require('./services/api')
 
+const apiUrl= `https://api.telegram.org/bot${process.env.token}`;
+const apiFileUrl= `https://api.telegram.org/file/bot${process.env.token}`;
+
 let matricula = 0
 let data = null
 let name = ''
