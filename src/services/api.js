@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const api = axios.create({
-  baseURL: 'http://localhost:3333',
+  baseURL: 'http://https://api-mylms.herokuapp.com/',
 });
 
 module.exports = {
