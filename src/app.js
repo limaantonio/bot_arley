@@ -13,6 +13,8 @@ const schedule = require('node-schedule')
 const telegram = new Telegram(process.env.token)
 const bot = new Telegraf(process.env.token)
 const {api} = require('./services/api')
+const express = require('express');
+const app = express();
 
 const apiUrl= `https://api.telegram.org/bot${process.env.token}`;
 const apiFileUrl= `https://api.telegram.org/file/bot${process.env.token}`;
@@ -173,3 +175,5 @@ bot.startPolling()
 
 //pesamentos: para obter o id do usuario do bot (userID), acho que posso obter atraves de: const name = ctx.update.message.from.id
 //no momento da primeira interação com o bot e posteriromente armazenar na tabela de student
+
+module.exports = app;
