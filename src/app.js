@@ -12,9 +12,10 @@ const { enter, leave } = Stage
 const schedule = require('node-schedule')
 const telegram = new Telegram(process.env.token)
 const bot = new Telegraf(process.env.token)
-const {api} = require('./services/api')
+
 const express = require('express');
 const app = express();
+const {getTarefas, login, getLesson, getTask, getTaskById} = require('./services/api')
 
 const apiUrl= `https://api.telegram.org/bot${process.env.token}`;
 const apiFileUrl= `https://api.telegram.org/file/bot${process.env.token}`;
@@ -34,7 +35,6 @@ bot.hears([/oi/i, /ola/i, /iae/i, /arley/i], ctx => {
     ctx.reply(`Oi, eu sou o Arley! 😃\n\nEstou aqui para lhe ajudar na sua jornada de estudos.\n\nAntes de tudo, preciso dos seus dados, clique pra fazer /login.`)
 })
 
-  
 bot.start(ctx => {
     const name = ctx.update.message.from.first_name
     ctx.reply(`Seja bem vindo, ${name}!`)
@@ -49,14 +49,6 @@ echoScene.on('text', ctx => ctx.reply(ctx.message.text))
 echoScene.on('message', ctx => ctx.reply('Apenas mensagens de texto, por favor'))
 
 /*-------------------------------WIZARD REVISAO INICIO ---------------------------*/
-const matriculaHandler = new Composer()
-matriculaHandler.hears(/(\d+)/, ctx => {
-    matricula = ctx.match[1]
-    ctx.reply('Qual sua data de nascimento?')
-    ctx.wizard.next()
-})
-
-matriculaHandler.use(ctx => ctx.reply('Apenas números são aceitos...'))
 
 const dataHandler = new Composer()
 dataHandler.hears(/(\d{2}\/\d{2}\/\d{4})/, ctx => {
@@ -84,17 +76,72 @@ confirmacaoHandler.action('n', ctx => {
 
 confirmacaoHandler.use(ctx => ctx.reply('Apenas confirme', confirmacao))
 
+const botoesAgenda = tarefas => {
+    const botoes = tarefas.map(item => {
+    
+    return [Markup.callbackButton(`${item.name}`, `select ${item.id}`)]
+    })
+    return Extra.markup(Markup.inlineKeyboard(botoes, { columns: 3 }))
+}
+
+let tarefas = [];
+let lessons = [];
+let tasks = [];
+
+bot.action(/select (.+)/, async ctx => {
+    tarefas = tarefas.filter(item => item !== ctx.match[1])
+    lessons = await getLesson(ctx.match[1]);
+   
+    ctx.reply(`Sobre qual aula você quer falar?`, botoesLesson(lessons))
+})
+
+const botoesLesson = lessons => {
+    const botoes = lessons.map(item => {
+   
+    return [Markup.callbackButton(`${item.title}`, `selectTask ${item.id}`)]
+    })
+    return Extra.markup(Markup.inlineKeyboard(botoes, { columns: 3 }))
+}
+
+bot.action(/selectTask (.+)/, async ctx => {
+    lessons = lessons.filter(item => item !== ctx.match[1])
+    tasks = await getTask(ctx.match[1]);
+   
+     ctx.reply(`Aqui estão as tarefas sobre essa aula. Selecione uma das opções.`, botoesTask(tasks))
+})
+
+const botoesTask = lessons => {
+    const botoes = lessons.map(item => {
+   
+    return [Markup.callbackButton(`${item.name}`, `selectTaskItem ${item.id}`)]
+    })
+    return Extra.markup(Markup.inlineKeyboard(botoes, { columns: 3 }))
+}
+
+bot.action(/selectTaskItem (.+)/, async ctx => {
+    tasks = tasks.filter(item => item !== ctx.match[1])
+    task = await getTaskById(ctx.match[1]);
+   
+    ctx.replyWithHTML(`<b>Muito bem! Aqui está uma tarefa deixada pelo seu professor que vai servir de revisão. 
+    \nTrata-se de um ${task.type} que deve ser resolvido até o dia 20/04/2022.</b> \n\n
+    ${task.content_url}`)
+})
+
 const wizardCompra = new WizardScene('revisao',
-    ctx => {
-        ctx.reply('Sobre qual disciplina você quer falar?')
+    async ctx => {  
+        tarefas = await getTarefas()
+        ctx.reply(`Qual disciplina você quer falar?`, botoesAgenda(tarefas))
+     
+        // ctx.reply(`Sobre qual lesson você quer falar?`, botoesLesson(teste))
         ctx.wizard.next()
     },
     ctx => {
-        subject = ctx.update.message.text
+       
         ctx.reply('Vi que tem algumas atividades para essa disciplina.')
+        //lesson = ctx.update.message.text
         ctx.wizard.next()
     },
-    matriculaHandler,
+    
     dataHandler,
     confirmacaoHandler
 )
@@ -114,25 +161,21 @@ loginHandler.hears(/[A-z0-9]/, ctx => {
     ctx.wizard.next()
 })
 
-
-
 const confirmacaoLoginHandler = new Composer()
 confirmacaoLoginHandler.action('s', async ctx => {
-    var student = await api.get(`login?name=${name}&registration=${matricula}`);
-    console.log(student.data);
+    var student = await login(name, matricula);
 
-    if (student.data) {
-        ctx.reply(`Login confirmado!\n\nEm que posso ajudá-lo?\n\n📖 Para revisão entre /revisao\n📚 Para recomendação de conteúdos entre com /echo`)
+    if (student) {
+        ctx.reply(`Login confirmado!\n\nEm que posso ajudá-lo?\n\n📖 Para revisão entre /revisao\n📚 Para recomendação de conteúdos entre com /recomendacao\n `)
         ctx.scene.leave()
     } else {
         ctx.reply('Não foi possivel relizar o login. Por favor, verifique os dados')
         ctx.scene.leave()
     }
-   
 })
 
 confirmacaoLoginHandler.action('n', ctx => {
-    ctx.reply('Login excluído!')
+    ctx.reply('Tudo bem! Você pode entrar novamente.')
     ctx.scene.leave()
 })
 
