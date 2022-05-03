@@ -27,6 +27,16 @@ const getTaskById = async task => {
   return resp.data
 }
 
+const getTaskByStudent = async student => {
+  const resp = await axios.get(`${baseURL}student_task?status=CONCLUIDO&student=${student}`)
+  return resp.data
+}
+
+const getAction = async task => {
+  const resp = await axios.get(`${baseURL}action?task=${task}`)
+  return resp.data
+}
+
 const login = async (name, matricula) => {
   const res = await axios.get(`${baseURL}login?name=${name}&registration=${matricula}`);
   return res.data;
@@ -38,5 +48,7 @@ module.exports = {
   login,
   getLesson,
   getTask,
-  getTaskById
+  getTaskById,
+  getTaskByStudent,
+  getAction
 };
