@@ -480,7 +480,7 @@ async function acaoRevisaoEstudoIncompleto () {
     //  });
 
 //teste
-const notificacao = new schedule.scheduleJob(`0 50 23 2 * *`, acaoRevisaoEstudoIncompleto)
+const notificacao = new schedule.scheduleJob(`0 0 9 * * *`, acaoRevisaoEstudoIncompleto)
 
 //scheduler que verifica diariamente às 9 horas de segunda a sexta-feira se deve entregar o conteudo da acaoRevisaoEstudoIncompleto
 //const notificacao = new schedule.scheduleJob(`0 0 9 * * 1-5`, acaoRevisaoEstudoIncompleto)
