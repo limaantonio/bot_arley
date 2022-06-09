@@ -45,8 +45,18 @@ const getTaskByStudent = async student => {
   return resp.data
 }
 
+const getStudentTaskPennding = async () => {
+  const resp = await axios.get(`${baseURL}student_task?status=PENDENTE`)
+  return resp.data
+}
+
 const getAction = async task => {
   const resp = await axios.get(`${baseURL}action?task=${task}`)
+  return resp.data
+}
+
+const getActions = async () => {
+  const resp = await axios.get(`${baseURL}action`)
   return resp.data
 }
 
@@ -82,6 +92,7 @@ const login = async (matricula) => {
 
 module.exports = {
   getSubjects,
+  getActions,
   getTarefa,
   login,
   getLesson,
@@ -94,5 +105,6 @@ module.exports = {
   getLessonByStudent,
   insertCodeAccess,
   createStudent,
-  getStudents
+  getStudents,
+  getStudentTaskPennding
 };

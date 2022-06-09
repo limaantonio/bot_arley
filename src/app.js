@@ -16,7 +16,7 @@ const express = require('express');
 const moment = require('moment');
 const app = express();
 const {getSubjects, login, getLesson, getTask, getTaskById, getTaskByStudent, getAction,
-     getCompleted, getActionByLesson, getLessonByStudent, getStudents, insertCodeAccess, createStudent} = require('./services/api')
+     getCompleted, getStudentTaskPennding, getActionByLesson, getLessonByStudent, getActions, getStudents, insertCodeAccess, createStudent} = require('./services/api')
 const apiUrl= `https://api.telegram.org/bot${process.env.token}`;
 const apiFileUrl= `https://api.telegram.org/file/bot${process.env.token}`;
 
@@ -410,10 +410,6 @@ let feed;
 //     ctx.reply('Teste monitoramento.')
 // });
 
-
-
-
-
 /*-------------------------------WIZARD LOGIN FIM ---------------------------*/
 const stage = new Stage([echoScene, wizardRecomendacao, wizardRevisao, wizardMonitoramento, wizardLogin])
 bot.use(session())
@@ -430,6 +426,8 @@ bot.on('message', ctx => ctx.reply(`Desculpe, não compreendi.🙁 Você pode te
 
 stage.action('reponder');
 
+//notificar todos os alunos cadastrados
+//1-
 async function notificar () {
    const listStudent = await getStudents();
 
@@ -442,7 +440,50 @@ async function notificar () {
 //const s = 10;
 
 //const notificacao = new schedule.scheduleJob(`*/${s} * * * * *`, notificar)
-const notificacao = new schedule.scheduleJob(`15 59 6 * * 1-5`, notificar)
+//2-
+// / = new schedule.scheduleJob(`15 59 6 * * 1-5`, notificar)
+
+//Para a ação: Se nota >= ? em uma atividade x da aula invertida e não concluiu a aula invertida e se passaram pelo menos ? dias da data de entrega.
+//Executar um schedule todo os dias da semana, as 9 horas da manha para verificar se deve entrega alguma atividade
+async function acaoRevisaoEstudoIncompleto () {
+    const list_actions = await getActions();
+
+    const ListStudentTask = await getStudentTaskPennding();
+    
+    //lista de açoes
+    list_actions.listActions.map(action => {
+        //se for do tipo Revisão para estudo incompleto
+       if(action.category_action.name === 'Revisão para estudo incompleto') {
+    
+        //verfica se tem algum aluno apto a receber a msg do bot
+        ListStudentTask.map(studentTask => {
+            //converte a quantidade de dias configurada na ação para uma data
+            var dtTask = moment(studentTask.created_at).format('YYYY-MM-DD');
+            const dtEntregaBot = moment(dtTask).add(Number.parseInt(action.deadline), 'days'); 
+
+            //verifica se os dias que o professor configurou é a data atual
+            var today = new Date();
+            if( moment(dtEntregaBot).format('YYYY-MM-DD') === moment(today).format('YYYY-MM-DD') && studentTask.status === 'PENDENTE') {
+                //entrega do conteudo configurado
+                telegram.sendMessage(studentTask.student.code_access, `Bom dia! Responda essa atividade.\n${action.content_url} `);
+            }
+        });
+       }
+    })
+ };
+
+  //listar as tasks da acao para ver usa data de criacao
+ 
+    // listStudent.map((student) => {
+    //      telegram.sendMessage(student.code_access, `Bom dia! Quais são suas prioridades para está semana? Gostaria de responder agora?`, confirmacaoMonitoramento);
+    //      //telegram.sendMessage(student.code_access, `Bom dia! Quais são suas prioridades para está semana? Gostaria de responder agora? /reponder`);
+    //  });
+
+//teste
+const notificacao = new schedule.scheduleJob(`0 50 23 2 * *`, acaoRevisaoEstudoIncompleto)
+
+//scheduler que verifica diariamente às 9 horas de segunda a sexta-feira se deve entregar o conteudo da acaoRevisaoEstudoIncompleto
+//const notificacao = new schedule.scheduleJob(`0 0 9 * * 1-5`, acaoRevisaoEstudoIncompleto)
 
 bot.startPolling();
 
