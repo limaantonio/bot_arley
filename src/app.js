@@ -81,7 +81,7 @@ confirmacaoHandler.use(ctx => ctx.reply('Apenas confirme', confirmacao));
 const botoesSubject = subjects => {
     const botoes = subjects.map(item => {
     
-    return [Markup.callbackButton(`${item.name}`, `select ${item.id}`)]
+    return [Markup.callbackButton(`${item.name + ` - Professor: ` + item.teacher.name}`, `select ${item.id}`)]
     })
     return Extra.markup(Markup.inlineKeyboard(botoes, { columns: 3 }))
 }
@@ -89,7 +89,8 @@ const botoesSubject = subjects => {
 const botoesSubject2 = subjects => {
     const botoes = subjects.map(item => {
     
-    return [Markup.callbackButton(`${item.name}`, `selectLesson ${item.id}`)]
+    return [Markup.callbackButton(`${item.name + ` - Professor: ` + item.teacher.name}`, `selectLesson ${item.id}`)]
+    
     })
     return Extra.markup(Markup.inlineKeyboard(botoes, { columns: 3 }))
 }
