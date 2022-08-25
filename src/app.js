@@ -63,7 +63,8 @@ dataHandler.hears(/(\d{2}\/\d{2}\/\d{4})/, ctx => {
     ctx.wizard.next()
 });
 
-dataHandler.use(ctx => ctx.reply('Entre com uma data no formato dd/MM/YYYY'));
+//remover essa linha
+//dataHandler.use(ctx => ctx.reply('Entre com uma data no formato dd/MM/YYYY'));
 
 const confirmacaoHandler = new Composer()
 confirmacaoHandler.action('s', ctx => {
