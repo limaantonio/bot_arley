@@ -1,7 +1,6 @@
 const axios = require('axios');
 
 const baseURL = 'https://api-mylms.herokuapp.com/'
-//const baseURL = 'http://localhost:3333/'
 
 const getSubjects = async () => {
   const res = await axios.get(`${baseURL}subject`)
@@ -70,8 +69,8 @@ const getCompleted = async (lesson, student) => {
   return resp.data
 }
 
-const insertCodeAccess = async (id) => {
-  const res = await axios.put(`${baseURL}insert_code_access/${id}`);
+const insertCodeAccess = async (data, registration) => {
+  const res = await axios.put(`${baseURL}insert_code_access/${registration}`, data);
   return res.data;
 }
 

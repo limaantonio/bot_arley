@@ -16,7 +16,7 @@ const express = require('express');
 const moment = require('moment');
 const app = express();
 const {getSubjects, login, getLesson, getTask, getTaskById, getTaskByStudent, getAction,
-     getCompleted, getStudentTaskPennding, getActionByLesson, getLessonByStudent, getActions, getStudents, insertCodeAccess, createStudent} = require('./services/api')
+     getCompleted, getStudentTaskPennding, getActionByLesson, getLessonByStudent, getActions, getStudents, insertCodeAccess, updateStudent} = require('./services/api')
 const apiUrl= `https://api.telegram.org/bot${process.env.token}`;
 const apiFileUrl= `https://api.telegram.org/file/bot${process.env.token}`;
 
@@ -24,6 +24,7 @@ let matricula = 0
 let data = null
 let name = ''
 let subject = '' 
+let idUser = ''
 
 const confirmacao = Extra.markup(Markup.inlineKeyboard([
     Markup.callbackButton('Sim', 's'),
@@ -37,11 +38,13 @@ bot.hears([/oi/i, /ola/i, /iae/i, /arley/i], ctx => {
 
 bot.start(async ctx => {
     const nameUser = ctx.update.message.from.first_name
-    const idUser = ctx.update.message.from.id
-    const data = {name: nameUser, code_access: idUser};
-    const student = await createStudent(data);
-
-    ctx.replyWithHTML(`Oi, eu sou o Arley! 😃\n\nSeja bem vindo, ${nameUser}!\n\nEstou aqui para lhe ajudar na sua jornada de estudos.\n\nAnote aí sua matricula: <b>${student.registration}</b>, pois ela será importante para que eu o identifique.`)
+    idUser = ctx.update.message.from.id
+    
+    //essa feature foi removida pois o aluno será criado antes via postman
+    //const data = {name: nameUser, code_access: idUser};
+    //const student = await createStudent(data);
+    //ctx.replyWithHTML(`Oi, eu sou o Arley! 😃\n\nSeja bem vindo, ${nameUser}!\n\nEstou aqui para lhe ajudar na sua jornada de estudos.\n\nAnote aí sua matricula: <b>${student.registration}</b>, pois ela será importante para que eu o identifique.`)
+    ctx.replyWithHTML(`Oi, eu sou o Arley! 😃\n\nSeja bem vindo, ${nameUser}!\n\nEstou aqui para lhe ajudar na sua jornada de estudos.\n\n Antes de continuarmos, informe sua matricula, clique em /iniciar`)
 });
 
 const echoScene = new Scene('echo');
@@ -320,6 +323,38 @@ const wizardRevisao = new WizardScene('revisao',
 );
 /*-------------------------------WIZARD REVISAO FIM ---------------------------*/
 
+
+/*-------------------------------WIZARD PRIMEIRO LOGIN ---------------------------*/
+const inicioHandler = new Composer()
+inicioHandler.hears(/[A-z0-9]/, ctx => {
+    matricula = ctx.update.message.text
+    ctx.reply(`Confirmar?`, confirmacao)
+    ctx.wizard.next()
+});
+
+const confirmacaoInicioHandler = new Composer()
+confirmacaoInicioHandler.action('s', async ctx => {
+    
+    const data = {code_access: idUser};
+
+    try {
+        await insertCodeAccess(data, matricula);
+
+        ctx.reply(`Login confirmado!\n
+Em que posso ajudá-lo?\n
+📖 Para revisão entre /revisao
+📚 Para recomendação de conteúdos entre com /recomendacao\n `)
+
+        ctx.scene.leave()
+    } catch (error) {
+        ctx.reply('Não foi possivel relizar o login. Por favor, verifique os dados e tente novamente. /login')
+        ctx.scene.leave()
+        console.log(error)
+    }
+})
+
+/*-------------------------------WIZARD PRIMEIRO  LOGIN  ---------------------------*/
+
 /*-------------------------------WIZARD LOGIN INICIO ---------------------------*/
 const loginHandler = new Composer()
 loginHandler.hears(/[A-z0-9]/, ctx => {
@@ -351,6 +386,18 @@ confirmacaoLoginHandler.action('n', ctx => {
     ctx.scene.leave()
 })
 
+/*-------------------------------WIZARD INICIO ---------------------------*/
+const wizardInicio = new WizardScene('iniciar',
+    ctx => {
+        ctx.reply('Qual sua matricula?')
+        ctx.wizard.next()
+    },
+    inicioHandler,
+    confirmacaoInicioHandler
+)
+wizardInicio.leave();
+wizardInicio.command('sair_do_login', leave())
+/*-------------------------------WIZARD FIM ---------------------------*/
 
 
 /*-------------------------------WIZARD LOGIN INICIO ---------------------------*/
@@ -413,12 +460,13 @@ let feed;
 // });
 
 /*-------------------------------WIZARD LOGIN FIM ---------------------------*/
-const stage = new Stage([echoScene, wizardRecomendacao, wizardRevisao, wizardMonitoramento, wizardLogin])
+const stage = new Stage([echoScene, wizardRecomendacao, wizardRevisao, wizardMonitoramento, wizardLogin, wizardInicio])
 bot.use(session())
 bot.use(stage.middleware())
 bot.command('revisao', enter('revisao'))
 bot.command('recomendacao', enter('recomendacao'))
 bot.command('reponder', enter('reponder'))
+bot.command('iniciar', enter('iniciar'))
 bot.command('login', enter('login'))
 //fallback
 bot.on('message', ctx => ctx.reply(`Desculpe, não compreendi.🙁 Você pode tentar outro comandos: \n
