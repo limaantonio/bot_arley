@@ -1,6 +1,7 @@
 const axios = require('axios');
 
-const baseURL = 'https://api-mylms.herokuapp.com/'
+//const baseURL = 'https://api-mylms.herokuapp.com/'
+const baseURL = 'http://localhost:3333/'
 
 const getSubjects = async () => {
   const res = await axios.get(`${baseURL}subject`)
@@ -22,9 +23,14 @@ const getLessonByStudent = async student => {
   return resp.data
 }
 
-
+//essa deve ser studentTask
 const getTask = async lesson => {
   const resp = await axios.get(`${baseURL}tasks?lesson=${lesson}`)
+  return resp.data
+}
+
+const taskByLessonAndStudent = async (student, lesson) => {
+  const resp = await axios.get(`${baseURL}taskByLessonAndStudent?student=${student}&lesson=${lesson}`)
   return resp.data
 }
 
@@ -44,13 +50,18 @@ const getTaskByStudent = async student => {
   return resp.data
 }
 
+const getTaskByStudentPennding = async student => {
+  const resp = await axios.get(`${baseURL}student_task?status=PENDENTE&student=${student}`)
+  return resp.data
+}
+
 const getStudentTaskPennding = async () => {
   const resp = await axios.get(`${baseURL}student_task?status=PENDENTE`)
   return resp.data
 }
 
 const getAction = async task => {
-  const resp = await axios.get(`${baseURL}action?task=${task}`)
+  const resp = await axios.get(`${baseURL}actions_task?task=${task}`)
   return resp.data
 }
 
@@ -64,8 +75,8 @@ const getActionByLesson = async lesson => {
   return resp.data
 }
 
-const getCompleted = async (lesson, student) => {
-  const resp = await axios.get(`${baseURL}get_student_task?student=${student}&lesson=${lesson}`)
+const getTaskPenndigByLessonByStudent = async (lesson, student) => {
+  const resp = await axios.get(`${baseURL}get_pennding_task_by_student_lesson?student=${student}&lesson=${lesson}`)
   return resp.data
 }
 
@@ -99,11 +110,13 @@ module.exports = {
   getTaskById,
   getTaskByStudent,
   getAction,
-  getCompleted,
+  getTaskPenndigByLessonByStudent,
   getActionByLesson,
   getLessonByStudent,
   insertCodeAccess,
   createStudent,
   getStudents,
-  getStudentTaskPennding
+  getStudentTaskPennding,
+  getTaskByStudentPennding,
+  taskByLessonAndStudent
 };
