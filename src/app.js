@@ -256,24 +256,24 @@ bot.action(/selectTaskItem (.+)/, async ctx => {
         action.map(item => {
             if (item.action.category[0].context === 'RECOMENDACAO' && typeBot === 'RECOMENDACAO') {
                 //procuara pela ação que possui nota inferior
-                if (task[0].student_task.score < task[0].student_task.tasks[0].expected_score) {
+                if (task[0].student_task.score <  item.action.passing_score) {
                     if (item.action.category[0].name === 'Recuperação de nota em uma atividade x de uma aula invertida') {
-                        ctx.replyWithHTML(`A nota esperada nessa atividade era: ${task[0].student_task.tasks.expected_score}
+                        ctx.replyWithHTML(`A nota esperada nessa atividade era: ${item.action.passing_score}
 Porém você obteve ${task[0].student_task.score}. 
 Aqui está uma <b> recuperação complementar para essa atividade.
-\nTrata-se de um ${item.action.title} para nota inferior a ${task[0].student_task.score}.</b> \n\n
+\nTrata-se de um ${item.action.title}.</b> \n\n
 ${item.action.content_url}`)
                         findAction = true
                         action_.push(item);
-                    } else if (action.length && findAction === false && task[0].student_task.score < task[0].student_task.tasks.expected_score){
+                    } else if (action.length && findAction === false && task[0].student_task.score < item.action.passing_score){
                         ctx.replyWithHTML(`Não há nenhuma ação cadastrada para essa atividade.`)
                     }
                 } else {
                     if (item.action.category[0].name === 'Recomendação complementar para uma atividade x de uma aula invertida') {
-                        ctx.replyWithHTML(`A nota esperada nessa atividade era: ${task[0].student_task.tasks[0].expected_score}
+                        ctx.replyWithHTML(`A nota esperada nessa atividade era: ${item.action.passing_score}
 Você obteve ${task[0].student_task.score}. 
 Muito bem! Aqui está uma <b> recomendação complementar para essa atividade. 
-\nTrata-se de um ${item.action.title} para nota inferior a ${task[0].student_task.score}.</b> \n\n
+\nTrata-se de um ${item.action.title}.</b> \n\n
 ${item.action.content_url}`)
                         findAction = true
                         action_.push(item);
