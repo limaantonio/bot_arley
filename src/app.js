@@ -199,7 +199,7 @@ const botoesTask = student_tasks => {
 }
 
 const botoesConfirmacaoRevisaoFinalizouLesson = Extra.markup(Markup.inlineKeyboard([
-    Markup.callbackButton('Sim', 'yes_quiz_lesson_complete'),
+    Markup.callbackButton('Sim', 'yes_complete'),
     Markup.callbackButton('Não', 'n'),
 ]));
 
@@ -228,6 +228,8 @@ bot.action(/selectTask (.+)/, async ctx => {
         tasks = await taskByLessonAndStudent(student.id, ctx.match[1]);
     } 
 
+   
+
     tasks.map(task => {                                                                                                                                                                                     
         if (task.student_task.status === 'PENDENTE') {
             complete = false;
@@ -240,7 +242,7 @@ bot.action(/selectTask (.+)/, async ctx => {
         task = completeTask;
         ctx.reply(`Aqui estão as tarefas concluidas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
     } else if (tasks && typeBot === 'REVISAO') {
-        // action = await getActionByLesson(lesson);
+        action = await getActionByLesson(lesson);
         ctx.reply(`Obá, você concluiu todas as atividades, que tal fazer um QUIZ?`, botoesConfirmacaoRevisaoFinalizouLesson);
     }
 });
@@ -342,7 +344,7 @@ confirmacaoHandlerRevisao.action('s_quiz_task', async ctx => {
     ctx.scene.leave();
 });
 
-confirmacaoHandlerRevisao.action('yes_quiz_lesson_complete', async ctx => {
+confirmacaoHandlerRevisao.action('yes_complete', async ctx => {
     ctx.replyWithHTML(`<b>Muito bem! Aqui está um QUIZ deixada pelo seu professor que vai servir para aprimorar seus conhecimentos.</b> 
         ${action[0].content_url}`);
     ctx.scene.leave();
