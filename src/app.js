@@ -17,8 +17,8 @@ const moment = require('moment');
 const app = express();
 
 const {getSubjects, login, getLesson, getTask, getTaskById, getTaskByStudent, getAction,
-    getTaskPenndigByLessonByStudent, taskByLessonAndStudent, getTaskByStudentPennding, getStudentTaskPennding, getActionByLesson, 
-    getLessonByStudent, getActions, getStudents, insertCodeAccess, updateStudent} = require('./services/api')
+    getTaskPenndigByLessonByStudent, taskByLessonAndStudent, getTaskByStudentPennding, getActionByLesson, 
+    getLessonByStudent, getTaskByStudentStatus, getActions, getStudents, insertCodeAccess, updateStudent} = require('./services/api')
 
 let matricula = ''//esta tudo bem ficar global
 let idUser = ''//esta tudo bem ficar global
@@ -228,7 +228,9 @@ bot.action(/selectTask (.+)/, async ctx => {
         tasks = await taskByLessonAndStudent(student.id, ctx.match[1]);
     } 
 
-   
+    action = await getActionByLesson(lesson);
+
+    var entrega = true;
 
     tasks.map(task => {                                                                                                                                                                                     
         if (task.student_task.status === 'PENDENTE') {
@@ -236,14 +238,30 @@ bot.action(/selectTask (.+)/, async ctx => {
         } else {
             completeTask.push(task);
         }
+       
+
+        action.map(a => {
+            var dtTask = moment(task.student_task.dt_complete_task).format('YYYY-MM-DD');
+            const dtEntregaBot = moment(dtTask).add(Number.parseInt(a.deadline), 'days'); 
+          
+            var today = new Date();
+            //Se pelo menos uma student_task tiver a data de entrega menor (ou seja, nao se passou os dias esperado) 
+            if (moment(dtEntregaBot).format('YYYY-MM-DD') > moment(today).format('YYYY-MM-DD')) {
+                entrega = false
+            } 
+        })
+       
     });
 
+    //verificar tbm a data de conclusao da tarefa 
     if (completeTask.length != tasks.length) {
         task = completeTask;
         ctx.reply(`Aqui estão as tarefas concluidas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
-    } else if (tasks && typeBot === 'REVISAO') {
-        action = await getActionByLesson(lesson);
+    } else if (tasks && typeBot === 'REVISAO' && entrega) {
+       
         ctx.reply(`Obá, você concluiu todas as atividades, que tal fazer um QUIZ?`, botoesConfirmacaoRevisaoFinalizouLesson);
+    } else if (entrega === false){
+        ctx.reply(`Parece que você ainda está dentro do prazo de finalização da atividade.`)
     }
 });
 
@@ -257,7 +275,7 @@ bot.action(/selectTaskItem (.+)/, async ctx => {
     if (action && action.length > 0 ) {
         action.map(item => {
             if (item.action.category[0].context === 'RECOMENDACAO' && typeBot === 'RECOMENDACAO') {
-                //procuara pela ação que possui nota inferior
+                //procura pela ação que possui nota inferior
                 if (task[0].student_task.score <  item.action.passing_score) {
                     if (item.action.category[0].name === 'Recuperação de nota em uma atividade x de uma aula invertida') {
                         ctx.replyWithHTML(`A nota esperada nessa atividade era: ${item.action.passing_score}
@@ -565,7 +583,7 @@ async function notificar () {
 async function acaoRevisaoEstudoIncompleto () {
     const list_actions = await getActions();
 
-    const ListStudentTask = await getStudentTaskPennding();
+    const ListStudentTask = await getTaskByStudentStatus();
     
     //lista de açoes
     list_actions.listActions.map(action => {

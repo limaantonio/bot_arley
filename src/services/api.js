@@ -55,8 +55,8 @@ const getTaskByStudentPennding = async student => {
   return resp.data
 }
 
-const getStudentTaskPennding = async () => {
-  const resp = await axios.get(`${baseURL}student_task?status=PENDENTE`)
+const getTaskByStudentStatus = async () => {
+  const resp = await axios.get(`${baseURL}student_task?status=CONCLUIDO`)
   return resp.data
 }
 
@@ -116,7 +116,6 @@ module.exports = {
   insertCodeAccess,
   createStudent,
   getStudents,
-  getStudentTaskPennding,
-  getTaskByStudentPennding,
-  taskByLessonAndStudent
+  taskByLessonAndStudent,
+  getTaskByStudentStatus
 };
