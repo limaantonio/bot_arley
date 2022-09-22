@@ -225,42 +225,46 @@ bot.action(/selectTask (.+)/, async ctx => {
    var completeTask = [];
 
     if (student) {
-        tasks = await taskByLessonAndStudent(student.id, ctx.match[1]);
+        task = await taskByLessonAndStudent(student.id, ctx.match[1]);
     } 
 
     action = await getActionByLesson(lesson);
 
     var entrega = true;
 
-    tasks.map(task => {                                                                                                                                                                                     
-        if (task.student_task.status === 'PENDENTE') {
-            complete = false;
-        } else {
-            completeTask.push(task);
-        }
-       
+    if (task) {
+        task.map(t => {                                                                                                                                                                                     
+            if (t.student_task.status === 'PENDENTE') {
+                complete = false;
+            } else {
+                completeTask.push(t);
+            }
+           
+    
+            action.map(a => {
+                var dtTask = moment(t.student_task.dt_complete_task).format('YYYY-MM-DD');
+                const dtEntregaBot = moment(dtTask).add(Number.parseInt(a.deadline), 'days'); 
+              
+                var today = new Date();
+                //Se pelo menos uma student_task tiver a data de entrega menor (ou seja, nao se passou os dias esperado) 
+                if (moment(dtEntregaBot).format('YYYY-MM-DD') > moment(today).format('YYYY-MM-DD')) {
+                    entrega = false
+                } 
+            })
+        });
+    }
 
-        action.map(a => {
-            var dtTask = moment(task.student_task.dt_complete_task).format('YYYY-MM-DD');
-            const dtEntregaBot = moment(dtTask).add(Number.parseInt(a.deadline), 'days'); 
-          
-            var today = new Date();
-            //Se pelo menos uma student_task tiver a data de entrega menor (ou seja, nao se passou os dias esperado) 
-            if (moment(dtEntregaBot).format('YYYY-MM-DD') > moment(today).format('YYYY-MM-DD')) {
-                entrega = false
-            } 
-        })
-       
-    });
+    if (typeBot === 'RECOMENDACAO') {
+        ctx.reply(`Aqui estão as tarefas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
+    }
 
-    //verificar tbm a data de conclusao da tarefa 
-    if (completeTask.length != tasks.length) {
+    if (completeTask.length === tasks.length && entrega === false) {
         task = completeTask;
         ctx.reply(`Aqui estão as tarefas concluidas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
     } else if (tasks && typeBot === 'REVISAO' && entrega) {
        
         ctx.reply(`Obá, você concluiu todas as atividades, que tal fazer um QUIZ?`, botoesConfirmacaoRevisaoFinalizouLesson);
-    } else if (entrega === false){
+    } else if (entrega === false && typeBot === 'REVISAO'){
         ctx.reply(`Parece que você ainda está dentro do prazo de finalização da atividade.`)
     }
 });
@@ -278,10 +282,9 @@ bot.action(/selectTaskItem (.+)/, async ctx => {
                 //procura pela ação que possui nota inferior
                 if (task[0].student_task.score <  item.action.passing_score) {
                     if (item.action.category[0].name === 'Recuperação de nota em uma atividade x de uma aula invertida') {
-                        ctx.replyWithHTML(`A nota esperada nessa atividade era: ${item.action.passing_score}
-Porém você obteve ${task[0].student_task.score}. 
-Aqui está uma <b> recuperação complementar para essa atividade.
-\nTrata-se de um ${item.action.title}.</b> \n\n
+                        ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, porém você obteve ${task[0].student_task.score}. 
+Aqui está uma <b> recuperação complementar</b> para essa atividade.
+\nTrata-se de um(a) ${item.action.title}.\n\n
 ${item.action.content_url}`)
                         findAction = true
                         action_.push(item);
@@ -290,10 +293,9 @@ ${item.action.content_url}`)
                     }
                 } else {
                     if (item.action.category[0].name === 'Recomendação complementar para uma atividade x de uma aula invertida') {
-                        ctx.replyWithHTML(`A nota esperada nessa atividade era: ${item.action.passing_score}
-Você obteve ${task[0].student_task.score}. 
-Muito bem! Aqui está uma <b> recomendação complementar para essa atividade. 
-\nTrata-se de um ${item.action.title}.</b> \n\n
+                        ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, você obteve ${task[0].student_task.score}.\n
+Muito bem! Aqui está uma <b> recomendação complementar </b> para essa atividade. 
+\nTrata-se de um(a) ${item.action.title}. \n\n
 ${item.action.content_url}`)
                         findAction = true
                         action_.push(item);
@@ -363,8 +365,8 @@ confirmacaoHandlerRevisao.action('s_quiz_task', async ctx => {
 });
 
 confirmacaoHandlerRevisao.action('yes_complete', async ctx => {
-    ctx.replyWithHTML(`<b>Muito bem! Aqui está um QUIZ deixada pelo seu professor que vai servir para aprimorar seus conhecimentos.</b> 
-        ${action[0].content_url}`);
+    ctx.replyWithHTML(`Muito bem! Aqui está um <b>${action[0].title}</b> deixado(a) pelo seu professor que vai servir para aprimorar seus conhecimentos. 
+\n${action[0].content_url}`);
     ctx.scene.leave();
 });
 
