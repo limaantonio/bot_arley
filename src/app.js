@@ -43,13 +43,13 @@ bot.start(async ctx => {
     ctx.replyWithHTML(`Oi, eu sou o Arley! 😃\n\nSeja bem vindo, ${nameUser}!\n\nEstou aqui para lhe ajudar na sua jornada de estudos.\n\n Antes de continuarmos, informe sua matricula, clique em /iniciar`)
 });
 
-const confirmacaoHandler = new Composer()
-confirmacaoHandler.action('s', ctx => {
-    ctx.reply('Cadastro confirmado!')
-    ctx.scene.leave()
-});
+// const confirmacaoHandler = new Composer()
+// confirmacaoHandler.action('s', ctx => {
+//     ctx.reply('Cadastro confirmado!')
+//     ctx.scene.leave()
+// });
 
-confirmacaoHandler.use(ctx => ctx.reply('Apenas confirme', confirmacao));
+//confirmacaoHandler.use(ctx => ctx.reply('Apenas confirme', confirmacao));
 
 /*---------------------------------BOTOES INICIO -----------------------------*/
 /*---------------------------------Botoes de confirmacao ---------------------*/
@@ -254,18 +254,25 @@ bot.action(/selectTask (.+)/, async ctx => {
         });
     }
 
+    console.log(completeTask)
+    console.log(task)
+
     if (typeBot === 'RECOMENDACAO') {
         ctx.reply(`Aqui estão as tarefas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
     }
 
-    if (completeTask.length === tasks.length && entrega === false) {
+    if (completeTask.length === 0 && task.length === 0) {
+        ctx.reply(`Você não tem atividades para essa aula.1`)
+    } else if (completeTask.length !== task.length && completeTask.length !== 0 && entrega === false && typeBot === 'REVISAO') {
         task = completeTask;
         ctx.reply(`Aqui estão as tarefas concluidas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
+    } else if (completeTask.length === 0 && entrega === false && typeBot === 'REVISAO') {
+        ctx.reply(`Aqui estão as tarefas pendentes sobre essa aula. Selecione uma das opções.`, botoesTask(task))
     } else if (tasks && typeBot === 'REVISAO' && entrega) {
-       
         ctx.reply(`Obá, você concluiu todas as atividades, que tal fazer um QUIZ?`, botoesConfirmacaoRevisaoFinalizouLesson);
-    } else if (entrega === false && typeBot === 'REVISAO'){
+    } else if (completeTask.length > 0 && entrega === false && typeBot === 'REVISAO'){
         ctx.reply(`Parece que você ainda está dentro do prazo de finalização da atividade.`)
+        ctx.scene.leave();
     }
 });
 
@@ -278,12 +285,13 @@ bot.action(/selectTaskItem (.+)/, async ctx => {
     //adionar verificação da pontuacao
     if (action && action.length > 0 ) {
         action.map(item => {
+            console.log(item)
             if (item.action.category[0].context === 'RECOMENDACAO' && typeBot === 'RECOMENDACAO') {
                 //procura pela ação que possui nota inferior
                 if (task[0].student_task.score <  item.action.passing_score) {
                     if (item.action.category[0].name === 'Recuperação de nota em uma atividade x de uma aula invertida') {
                         ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, porém você obteve ${task[0].student_task.score}. 
-Aqui está uma <b> recuperação complementar</b> para essa atividade.
+Aqui está uma <b> recuperação</b> para essa atividade.
 \nTrata-se de um(a) ${item.action.title}.\n\n
 ${item.action.content_url}`)
                         findAction = true
@@ -294,19 +302,21 @@ ${item.action.content_url}`)
                 } else {
                     if (item.action.category[0].name === 'Recomendação complementar para uma atividade x de uma aula invertida') {
                         ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, você obteve ${task[0].student_task.score}.\n
-Muito bem! Aqui está uma <b> recomendação complementar </b> para essa atividade. 
+Muito bem! Aqui está uma <b> recomendação</b> para essa atividade. 
 \nTrata-se de um(a) ${item.action.title}. \n\n
 ${item.action.content_url}`)
                         findAction = true
                         action_.push(item);
                     } else if (action.length && findAction === false && task[0].student_task.score >= task[0].student_task.tasks.expected_score){
                         ctx.replyWithHTML(`Não há nenhuma ação cadastrada para essa atividade.`)
+                        ctx.scene.leave();
                     }
                 }
             } else if (item.action.category[0].context === 'REVISAO' && typeBot === 'REVISAO') { 
                     ctx.replyWithHTML(`<b>Muito bem! Aqui está uma tarefa deixada pelo seu professor que vai servir de revisão. 
                     \nTrata-se de um ${item.action.title} que deve ser resolvido até o dia ${item.action.dt_complete_class}.</b> \n\n
                     ${item.action.content_url}`)
+                    ctx.scene.leave();
             } else {
                 ctx.replyWithHTML(`Não há nenhuma ação cadastrada nesse contexto para essa atividade.`)
             }
@@ -386,8 +396,12 @@ const wizardRevisao = new WizardScene('revisao',
         }
         ctx.wizard.next();
     },
-    confirmacaoHandlerRevisao
+    confirmacaoHandlerRevisao,
+
+
 );
+wizardRevisao.leave();
+wizardRevisao.command('sair_revisao', leave());
 /*---------------------------------REVISAO FIM -------------------------------*/
 
 
@@ -397,16 +411,10 @@ const wizardRecomendacao = new WizardScene('recomendacao',
         subjects = await getSubjects();
         typeBot = 'RECOMENDACAO';
         ctx.reply(`Qual disciplina você quer falar?`, botoesSubject(subjects));
-        ctx.wizard.next();
     },
-    ctx => {
-        ctx.reply('Vi que tem algumas atividades para essa disciplina.')
-        ctx.wizard.next();
-    },
-    confirmacaoHandler
 );
 
-wizardRecomendacao.leave(ctx => ctx.reply('Saindo da ação de recomendação'));
+wizardRecomendacao.leave();
 wizardRecomendacao.command('sair_recomendacao', leave());
 /*---------------------------------RECOMENDACAO INICIO -----------------------*/
 
