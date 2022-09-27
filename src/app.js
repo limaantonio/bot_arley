@@ -390,15 +390,17 @@ const wizardRevisao = new WizardScene('revisao',
         subjects = await getSubjects();
         typeBot = 'REVISAO';
         //mostra as disciplinas as quais o aluno está matriculado - - REVISAO 1/1
-        ctx.reply(`Qual disciplina você quer falar?`, botoesSubject(subjects))
+        
         if(student) {
+            ctx.reply(`Qual disciplina você quer falar?`, botoesSubject(subjects))
             taskStudent = await getTaskByStudent(student.id)
+            ctx.wizard.next();
+        } else {
+            ctx.reply(`Antes de continuar, preciso da sua matricula. Clique para fazer /login`);
+            ctx.scene.leave() 
         }
-        ctx.wizard.next();
     },
     confirmacaoHandlerRevisao,
-
-
 );
 wizardRevisao.leave();
 wizardRevisao.command('sair_revisao', leave());
@@ -410,8 +412,16 @@ const wizardRecomendacao = new WizardScene('recomendacao',
     async ctx => {  
         subjects = await getSubjects();
         typeBot = 'RECOMENDACAO';
-        ctx.reply(`Qual disciplina você quer falar?`, botoesSubject(subjects));
+      
+        if (student) {
+            ctx.reply(`Qual disciplina você quer falar?`, botoesSubject(subjects));
+            ctx.wizard.next()
+        } else {
+            ctx.reply(`Antes de continuar, preciso da sua matricula. Clique para fazer /login`);
+            ctx.scene.leave()
+        }
     },
+   
 );
 
 wizardRecomendacao.leave();
@@ -477,7 +487,7 @@ confirmacaoLoginHandler.action('s', async ctx => {
     student = await login(matricula);
 
     if (student) {
-    ctx.reply(`Login confirmado!\n
+    ctx.reply(`Bem-vindo, ${student.name}!\n
 Em que posso ajudá-lo?\n
 📖 Para revisão entre /revisao
 📚 Para recomendação de conteúdos entre com /recomendacao\n `)
