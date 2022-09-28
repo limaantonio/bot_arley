@@ -254,26 +254,26 @@ bot.action(/selectTask (.+)/, async ctx => {
         });
     }
 
-    console.log(completeTask)
-    console.log(task)
-
     if (typeBot === 'RECOMENDACAO') {
         ctx.reply(`Aqui estão as tarefas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
     }
 
-    if (completeTask.length === 0 && task.length === 0) {
-        ctx.reply(`Você não tem atividades para essa aula.1`)
-    } else if (completeTask.length !== task.length && completeTask.length !== 0 && entrega === false && typeBot === 'REVISAO') {
-        task = completeTask;
-        ctx.reply(`Aqui estão as tarefas concluidas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
-    } else if (completeTask.length === 0 && entrega === false && typeBot === 'REVISAO') {
-        ctx.reply(`Aqui estão as tarefas pendentes sobre essa aula. Selecione uma das opções.`, botoesTask(task))
-    } else if (tasks && typeBot === 'REVISAO' && entrega) {
-        ctx.reply(`Obá, você concluiu todas as atividades, que tal fazer um QUIZ?`, botoesConfirmacaoRevisaoFinalizouLesson);
-    } else if (completeTask.length > 0 && entrega === false && typeBot === 'REVISAO'){
-        ctx.reply(`Parece que você ainda está dentro do prazo de finalização da atividade.`)
-        ctx.scene.leave();
+    if (completeTask != null) {
+        if (completeTask.length === 0 && task.length === 0) {
+            ctx.reply(`Você não tem atividades para essa aula.1`)
+        } else if (completeTask.length !== task.length && completeTask.length !== 0 && entrega === false && typeBot === 'REVISAO') {
+            task = completeTask;
+            ctx.reply(`Aqui estão as tarefas concluidas sobre essa aula. Selecione uma das opções.`, botoesTask(task))
+        } else if (completeTask.length === 0 && entrega === false && typeBot === 'REVISAO') {
+            ctx.reply(`Aqui estão as tarefas pendentes sobre essa aula. Selecione uma das opções.`, botoesTask(task))
+        } else if (tasks && typeBot === 'REVISAO' && entrega) {
+            ctx.reply(`Obá, você concluiu todas as atividades, que tal fazer um QUIZ?`, botoesConfirmacaoRevisaoFinalizouLesson);
+        } else if (completeTask.length > 0 && entrega === false && typeBot === 'REVISAO'){
+            ctx.reply(`Parece que você ainda está dentro do prazo de finalização da atividade.`)
+        }
     }
+
+    
 });
 
 //ok
@@ -282,32 +282,42 @@ bot.action(/selectTaskItem (.+)/, async ctx => {
     var findAction = false;
     var action_ = []
 
+    var select_task;
+
+    if (task) {
+        await task.map(t => {
+            if (t.student_task.tasks[0].id === ctx.match[1]) {
+                select_task = t
+            }
+        })
+    }
+
     //adionar verificação da pontuacao
     if (action && action.length > 0 ) {
         action.map(item => {
-            console.log(item)
+          
             if (item.action.category[0].context === 'RECOMENDACAO' && typeBot === 'RECOMENDACAO') {
                 //procura pela ação que possui nota inferior
-                if (task[0].student_task.score <  item.action.passing_score) {
+                if (select_task.student_task.score <  item.action.passing_score) {
                     if (item.action.category[0].name === 'Recuperação de nota em uma atividade x de uma aula invertida') {
-                        ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, porém você obteve ${task[0].student_task.score}. 
+                        ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, porém você obteve ${select_task.student_task.score}. 
 Aqui está uma <b> recuperação</b> para essa atividade.
 \nTrata-se de um(a) ${item.action.title}.\n\n
 ${item.action.content_url}`)
                         findAction = true
                         action_.push(item);
-                    } else if (action.length && findAction === false && task[0].student_task.score < item.action.passing_score){
+                    } else if (action.length && findAction === false && select_task.student_task.score < item.action.passing_score){
                         ctx.replyWithHTML(`Não há nenhuma ação cadastrada para essa atividade.`)
                     }
                 } else {
                     if (item.action.category[0].name === 'Recomendação complementar para uma atividade x de uma aula invertida') {
-                        ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, você obteve ${task[0].student_task.score}.\n
+                        ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, você obteve ${select_task.student_task.score}.\n
 Muito bem! Aqui está uma <b> recomendação</b> para essa atividade. 
 \nTrata-se de um(a) ${item.action.title}. \n\n
 ${item.action.content_url}`)
                         findAction = true
                         action_.push(item);
-                    } else if (action.length && findAction === false && task[0].student_task.score >= task[0].student_task.tasks.expected_score){
+                    } else if (action.length && findAction === false && select_task.student_task.score >= select_task.student_task.tasks.expected_score){
                         ctx.replyWithHTML(`Não há nenhuma ação cadastrada para essa atividade.`)
                         ctx.scene.leave();
                     }
