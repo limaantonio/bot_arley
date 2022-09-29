@@ -297,31 +297,35 @@ bot.action(/selectTaskItem (.+)/, async ctx => {
         action.map(item => {
           
             if (item.action.category[0].context === 'RECOMENDACAO' && typeBot === 'RECOMENDACAO') {
-                //procura pela ação que possui nota inferior
-                if (select_task.student_task.score <  item.action.passing_score) {
-                    if (item.action.category[0].name === 'Recuperação de nota em uma atividade x de uma aula invertida') {
-                        ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, porém você obteve ${select_task.student_task.score}. 
-Aqui está uma <b> recuperação</b> para essa atividade.
-\nTrata-se de um(a) ${item.action.title}.\n\n
-${item.action.content_url}`)
-                        findAction = true
-                        action_.push(item);
-                    } else if (action.length && findAction === false && select_task.student_task.score < item.action.passing_score){
-                        ctx.replyWithHTML(`Não há nenhuma ação cadastrada para essa atividade.`)
-                    }
+                if (select_task.student_task.status === 'PENDENTE') {
+                    ctx.replyWithHTML(`Você ainda não concluiu essa atividade.`)
                 } else {
-                    if (item.action.category[0].name === 'Recomendação complementar para uma atividade x de uma aula invertida') {
-                        ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, você obteve ${select_task.student_task.score}.\n
-Muito bem! Aqui está uma <b> recomendação</b> para essa atividade. 
-\nTrata-se de um(a) ${item.action.title}. \n\n
-${item.action.content_url}`)
-                        findAction = true
-                        action_.push(item);
-                    } else if (action.length && findAction === false && select_task.student_task.score >= select_task.student_task.tasks.expected_score){
-                        ctx.replyWithHTML(`Não há nenhuma ação cadastrada para essa atividade.`)
-                        ctx.scene.leave();
+                    if (select_task.student_task.score <  item.action.passing_score) {
+                        if (item.action.category[0].name === 'Recuperação de nota em uma atividade x de uma aula invertida') {
+                            ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, porém você obteve ${select_task.student_task.score}. 
+    Aqui está uma <b> recuperação</b> para essa atividade.
+    \nTrata-se de um(a) ${item.action.title}.\n\n
+    ${item.action.content_url}`)
+                            findAction = true
+                            action_.push(item);
+                        } else if (action.length && findAction === false && select_task.student_task.score < item.action.passing_score){
+                            ctx.replyWithHTML(`Não há nenhuma ação cadastrada para essa atividade.`)
+                        }
+                    } else {
+                        if (item.action.category[0].name === 'Recomendação complementar para uma atividade x de uma aula invertida' && select_task.student_task.status === 'CONCLUIDO') {
+                            ctx.replyWithHTML(`A nota esperada nessa atividade era ${item.action.passing_score}, você obteve ${select_task.student_task.score}.\n
+    Muito bem! Aqui está uma <b> recomendação</b> para essa atividade. 
+    \nTrata-se de um(a) ${item.action.title}. \n\n
+    ${item.action.content_url}`)
+                            findAction = true
+                            action_.push(item);
+                        } else if (action.length && findAction === false && select_task.student_task.score >= select_task.student_task.tasks.expected_score){
+                            ctx.replyWithHTML(`Não há nenhuma ação cadastrada para essa atividade.`)
+                            ctx.scene.leave();
+                        }
                     }
                 }
+              
             } else if (item.action.category[0].context === 'REVISAO' && typeBot === 'REVISAO') { 
                     ctx.replyWithHTML(`<b>Muito bem! Aqui está uma tarefa deixada pelo seu professor que vai servir de revisão. 
                     \nTrata-se de um ${item.action.title} que deve ser resolvido até o dia ${item.action.dt_complete_class}.</b> \n\n
